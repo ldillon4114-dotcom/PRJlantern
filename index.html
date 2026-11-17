@@ -34,11 +34,7 @@
   body.charged #lantern .halo{opacity:1;transition:none;}
   body.draining #lantern .halo{opacity:0;transition:opacity 8s linear;}
   svg{display:block;width:100%;height:auto;position:relative;z-index:1;}
-  #core{transform-box:fill-box;transform-origin:center;transform:scale(1);}
-  body.charging #core{animation:swell 20s linear forwards;}
-  body.charged #core{transform:scale(1.62);transition:none;}
-  body.draining #core{transform:scale(1);transition:transform 8s linear;}
-  @keyframes swell{from{transform:scale(1);}to{transform:scale(1.62);}}
+  #core{transform-box:fill-box;transform-origin:center;}
   #status{position:relative;z-index:4;color:#bfffd9;letter-spacing:.42em;font-size:14px;
     text-transform:uppercase;text-shadow:0 0 14px rgba(0,255,140,.55);padding-left:.42em;}
   #pct{position:relative;z-index:4;color:rgba(190,255,220,.75);font-size:26px;font-weight:200;
@@ -232,7 +228,13 @@ function startCharge(){
   body.classList.remove('charged','draining'); reflow();
   body.classList.add('charging');
   flash.style.opacity=0;
-  initAudio();
+  try{
+    initAudio();
+    scheduleChargeAudio();
+  }catch(e){}
+  statusEl.textContent='CHARGING'; hintEl.textContent='charging the ring, sir';
+}
+function scheduleChargeAudio(){
   var t=AC.currentTime;
   master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(.02,t); master.gain.linearRampToValueAtTime(.34,t+20);
   sub.frequency.cancelScheduledValues(t); sub.frequency.setValueAtTime(38,t); sub.frequency.linearRampToValueAtTime(74,t+20);
@@ -247,7 +249,6 @@ function startCharge(){
     pctEl.textContent=phase==='draining'?Math.round(p*100)+'%':Math.round(p*100)+'%';
   },120);
   timers.end=setTimeout(endCharge,DUR);
-  statusEl.textContent='CHARGING'; hintEl.textContent='charging the ring, sir';
 }
 function endCharge(){
   if(phase!=='charging') return;
@@ -265,7 +266,8 @@ function startDrain(){
   phase='draining'; drainT0=performance.now();
   body.classList.remove('charged'); reflow(); body.classList.add('draining');
   statusEl.textContent='DISCHARGING'; hintEl.textContent='power returning to the dark';
-  powerdown();
+  kick();
+  try{ powerdown(); }catch(e){}
   var s=performance.now();
   clearInterval(timers.pct);
   timers.pct=setInterval(function(){
@@ -282,6 +284,13 @@ function finishDrain(){
   statusEl.textContent='TAP TO CHARGE'; hintEl.textContent='in brightest day, in blackest night';
   pctEl.textContent='';
 }
+var running=false;
+function frame(){
+  if(phase==='idle'){ running=false; cx.clearRect(0,0,innerWidth,innerHeight); return; }
+  draw();
+  requestAnimationFrame(frame);
+}
+function kick(){ if(!running){ running=true; requestAnimationFrame(frame); } }
 function draw(){
   cx.clearRect(0,0,innerWidth,innerHeight);
   var p=pnow(), now=performance.now();
@@ -298,9 +307,7 @@ function draw(){
     cx.beginPath(); cx.arc(innerWidth/2+rr*Math.cos(an),innerHeight*.47+rr*.62*Math.sin(an),1.6+3*p,0,6.28);
     cx.fillStyle='rgba(140,255,200,'+(.3+.6*p)+')'; cx.fill();
   }
-  requestAnimationFrame(draw);
 }
-requestAnimationFrame(draw);
 
 </script>
 </body>
