@@ -137,6 +137,11 @@ var timers={crack:null,tink:null,pct:null,end:null,hold:null};
 var cv=document.getElementById('fx'), cx=cv.getContext('2d'), motes=[];
 var statusEl=document.getElementById('status'), pctEl=document.getElementById('pct'),
     flash=document.getElementById('flash'), hintEl=document.getElementById('hint'), body=document.body;
+addEventListener('error',function(e){ try{ statusEl.textContent='ERR: '+((e&&e.message)||'unknown'); }catch(_e){} });
+function onTap(){ if(phase==='idle') startCharge(); }
+addEventListener('pointerdown',onTap,{passive:true});
+addEventListener('touchstart',onTap,{passive:true});
+addEventListener('click',onTap);
 function size(){ var d=devicePixelRatio||1; cv.width=Math.floor(innerWidth*d); cv.height=Math.floor(innerHeight*d); cx.setTransform(d,0,0,d,0,0); }
 addEventListener('resize',size); size();
 for(var i=0;i<60;i++) motes.push({x:Math.random(),y:Math.random(),r:.6+Math.random()*2.2,s:.15+Math.random()*.5,d:Math.random()*6.28});
@@ -296,10 +301,7 @@ function draw(){
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
-addEventListener('pointerdown',function(ev){
-  ev.preventDefault();
-  if(phase==='idle') startCharge();
-},{passive:false});
+
 </script>
 </body>
 </html>
